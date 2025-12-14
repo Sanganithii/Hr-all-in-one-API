@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from common.database_conn import get_db
-from common.model import User
-from utils.jwt_handler import decode_access_token
+from app.common.database_conn import get_db
+from app.common.model import User
+from app.utils.jwt_handler import decode_access_token
 from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session    
-from common.model import User
-from common.database_conn import get_db   
-from schemas.user import UserCreate
+from app.common.model import User
+from app.common.database_conn import get_db   
+from app.schemas.user import UserCreate
 import logging   
-from schemas.user import UserCreate, UserLogin
-from utils.jwt_handler import create_access_token                     
+from app.schemas.user import UserCreate, UserLogin
+from app.utils.jwt_handler import create_access_token                     
 
 
 logger = logging.getLogger()

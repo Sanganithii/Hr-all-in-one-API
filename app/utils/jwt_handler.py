@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 import jwt
 from datetime import datetime, timedelta
-from common.config import APIConfig
+from app.common.config import APIConfig
 
 authcredential = APIConfig.AuthCredential()
 

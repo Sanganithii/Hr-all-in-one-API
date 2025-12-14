@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Date, Integer, String, Text
-from common.database_conn import Base
+from app.common.database_conn import Base
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.sql import func
 from passlib.context import CryptContext

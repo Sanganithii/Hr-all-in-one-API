@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
-from utils.security import get_current_user
-from common.model import ProfileTable, UserFeedback
-# from utils.security import get_current_user
-from schemas.feedback_schema import FeedbackCreate, DummyUser
-from common.database_conn  import get_db
+from app.utils.security import get_current_user
+from app.common.model import ProfileTable, UserFeedback
+# from app.utils.security import get_current_user
+from app.schemas.feedback_schema import FeedbackCreate, DummyUser
+from app.common.database_conn  import get_db
 
 
 router = APIRouter(prefix="/feedback", tags=["Feedback"])

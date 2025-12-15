@@ -1,30 +1,30 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.common.database_conn import get_db
 from app.common.model import User
 from app.common.model import ProfileTable
 from app.schemas.profile import ProfileUpdate, GenderEnum
-from fastapi import Request
 from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 @router.post("/create")
-def update_profile(userId: int,data: ProfileUpdate,db: Session = Depends(get_db)):
+def createProfile(data: ProfileUpdate,db: Session = Depends(get_db),user_data: dict = Depends(get_current_user)):
 
-    user = db.query(User).filter(User.id == userId).first()
+    user = db.query(User).filter(User.id == user_data.id).first()
    
     if not user:
         return {"error": "User not found"}
-    profile=db.query(ProfileTable).filter(ProfileTable.userId == userId).first()
+    profile=db.query(ProfileTable).filter(ProfileTable.userId ==user_data.id).first()
     if profile:
         return {"error": "Profile already exists"}
     print("data.profileImage:", data.gender)
-    # Set default profile image if none provided
+
+
     if data.profileImage: 
-      print("fdd") # user uploaded image
+      print("fdd") 
       profileImage = data.profileImage
-    else:  # set based on gender
+    else:  
       if data.gender and data.gender.value == "male":
         profileImage = "male.jpg"
       elif data.gender and data.gender.value == "female":
@@ -34,8 +34,8 @@ def update_profile(userId: int,data: ProfileUpdate,db: Session = Depends(get_db)
         profileImage = "default.png"
 
     print("profileImage:", profileImage)
-    updateProfile = ProfileTable(
-        userId=userId,
+    createProfile = ProfileTable(
+        userId=user_data.id,
         name=user.name,
         email=user.email,
         phone=user.phone,
@@ -47,73 +47,53 @@ def update_profile(userId: int,data: ProfileUpdate,db: Session = Depends(get_db)
         createdOn=user.createdOn
     )
 
-    db.add(updateProfile)
+    db.add(createProfile)
     db.commit()
-    db.refresh(updateProfile)
+    db.refresh(createProfile)
 
-    return {"message": "Profile updated successfully", "profile": updateProfile}
+    return {"message": "Profile created successfully", "profile": createProfile}
 
 
-@router.put("/create")
-def update_profile(userId: int,data: ProfileUpdate,db: Session = Depends(get_db)):
+@router.put("/update")
+def update_profile(data: ProfileUpdate, db: Session = Depends(get_db), user_data: User = Depends(get_current_user)):
+  
+    profile = (db.query(ProfileTable).filter(ProfileTable.userId == user_data.id) .first())
 
-    user = db.query(User).filter(User.id == userId).first()
-   
-    if not user:
-        return {"error": "User not found"}
-    print("data.profileImage:", data.gender)
-    # Set default profile image if none provided
-    if data.profileImage: 
-      print("fdd") # user uploaded image
-      profileImage = data.profileImage
-    else:  # set based on gender
-      if data.gender and data.gender.value == "male":
-        profileImage = "male.jpg"
-      elif data.gender and data.gender.value == "female":
-        profileImage = "female.jpg"
-      else:
-        print("default.png assigned")
-        profileImage = "default.png"
+    if not profile:
+        return {"error": "Profile not found"}
 
-    print("profileImage:", profileImage)
-    updateProfile = ProfileTable(
-        userId=userId,
-        name=user.name,
-        email=user.email,
-        phone=user.phone,
-        gender=data.gender,
-        profileImage=profileImage,
-        dateOfBirth=data.dateOfBirth,
-        designation=data.designation,
-        companyName=data.companyName,
-        createdOn=user.createdOn
-    )
+    if data.profileImage:
+        profileImage = data.profileImage
+    else:
+        if data.gender and data.gender.value == "male":
+            profileImage = "male.jpg"
+        elif data.gender and data.gender.value == "female":
+            profileImage = "female.jpg"
+        else:
+            profileImage = "default.png"
 
-    db.add(updateProfile)
+    profile.gender = data.gender
+    profile.profileImage = profileImage
+    profile.dateOfBirth = data.dateOfBirth
+    profile.designation = data.designation
+    profile.companyName = data.companyName
+
     db.commit()
-    db.refresh(updateProfile)
+    db.refresh(profile)
 
-    return {"message": "Profile updated successfully", "profile": updateProfile}
-
-
-# @router.get("/{userId}")
-# def get_profile(userId: int, db: Session = Depends(get_db)):
-#     profile = db.query(ProfileTable).filter(ProfileTable.userId == userId).first()
-#     if not profile:
-#         return {"error": "Profile not found"}
-
-#     return {"profile": profile}
+    return {
+        "message": "Profile updated successfully",
+        "profile": profile
+    }
 
 
-
-
-@router.get("/{userId}")
-def get_profile(userId: int, request: Request, db: Session = Depends(get_db)):
-    profile = db.query(ProfileTable).filter(ProfileTable.userId == userId).first()
+@router.get("/")
+def get_profile(request: Request, db: Session = Depends(get_db),user_data: dict = Depends(get_current_user)  ):
+    profile = db.query(ProfileTable).filter(ProfileTable.userId == user_data.id).first()
     if not profile:
         return {"error": "Profile not found"}
     print("profile.profileImage:", profile.profileImage)
-    # Build full URL for profile image
+    
     profile_image_url = request.url_for("static", path=f"images/{profile.profileImage}")
     
 

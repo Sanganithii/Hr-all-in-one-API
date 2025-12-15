@@ -14,6 +14,7 @@ def create_access_token(data: dict):
 
 def decode_access_token(token: str):
     try:
+        print("Decoding token:", token)
         return jwt.decode(token, authcredential.SECRET_KEY, algorithms=[authcredential.ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

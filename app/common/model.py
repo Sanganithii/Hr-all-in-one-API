@@ -53,7 +53,7 @@ class UserFeedback(Base):
 
     userName = Column(String(100), nullable=False)
     designation = Column(String(100), nullable=False)
-    companyName = Column(String(150), nullable=False)
+    companyName = Column(String(150), default=None,nullable=False)
     image = Column(String(255), nullable=True)
 
     rating = Column(Integer, nullable=False)

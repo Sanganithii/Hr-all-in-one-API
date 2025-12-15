@@ -1,10 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-
+from app.common.model import User
 from app.utils.security import get_current_user
 from app.common.model import ProfileTable, UserFeedback
-# from app.utils.security import get_current_user
-from app.schemas.feedback_schema import FeedbackCreate, DummyUser
+from app.schemas.feedback_schema import FeedbackCreate
 from app.common.database_conn  import get_db
 
 
@@ -13,11 +12,9 @@ router = APIRouter(prefix="/feedback", tags=["Feedback"])
 
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
-def create_feedback(data: FeedbackCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def create_feedback(data:FeedbackCreate,db: Session = Depends(get_db),current_user: dict = Depends(get_current_user)):
     
-    # current_user=Depends(get_current_user)
-    current_user = DummyUser()
-
+    user=db.query(User).filter(User.id==current_user.id).first()
     existing_feedback = (
         db.query(UserFeedback)
         .filter(UserFeedback.userId == current_user.id)
@@ -43,7 +40,12 @@ def create_feedback(data: FeedbackCreate, db: Session = Depends(get_db), current
             status_code=status.HTTP_404_NOT_FOUND,
             detail=" profile is not updated"
         )
+    if profile.designation is None or profile.designation.strip() == "":
+        profile.designation = ""
+    if profile.companyName is None or profile.companyName.strip() == "":
+        profile.companyName = ""
 
+        
     feedback = UserFeedback(
         userId=current_user.id,
         userName=profile.name,
@@ -66,9 +68,9 @@ def create_feedback(data: FeedbackCreate, db: Session = Depends(get_db), current
 
 
 @router.get("/view-feedback")
-def get_top_positive_feedback(db: Session = Depends(get_db)):
+def get_top_positive_feedback(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     
-    rating_priority = [5, 4, 3]
+    rating_priority = [5, 4, 3,2,1]
 
     feedbacks = []
     selected_rating = None

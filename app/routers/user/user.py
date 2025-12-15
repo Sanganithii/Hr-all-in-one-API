@@ -4,8 +4,10 @@ from app.common.model import User
 from app.common.database_conn import get_db   
 from app.schemas.user import UserCreate
 import logging   
+from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.user import UserCreate, UserLogin
-from app.utils.jwt_handler import create_access_token                     
+from app.utils.jwt_handler import create_access_token    
+from app.utils.security import get_current_user                 
 
 
 logger = logging.getLogger()
@@ -37,13 +39,17 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(form_data: UserLogin, db: Session = Depends(get_db)):
-    if not form_data.email and not form_data.phone:
-        raise HTTPException(status_code=400, detail="Either email or phone must be provided.")
-    if form_data.email:
-        user = db.query(User).filter(User.email == form_data.email).first()
-    else:
-        user = db.query(User).filter(User.phone == form_data.phone).first()
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Accept username as email or phone
+    user = db.query(User).filter(
+        (User.email == form_data.username) | (User.phone == form_data.username)
+    ).first()
+    # if not form_data.email and not form_data.phone:
+    #     raise HTTPException(status_code=400, detail="Either email or phone must be provided.")
+    # if form_data.email:
+    #     user = db.query(User).filter(User.email == form_data.email).first()
+    # else:
+    #     user = db.query(User).filter(User.phone == form_data.phone).first()
     
 
     if not user:
@@ -59,4 +65,13 @@ def login(form_data: UserLogin, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.id
+    }
+
+
+@router.get("/protected")
+def protected_route(current_user: User = Depends(get_current_user)):
+    return {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "phone": current_user.phone
     }

@@ -217,26 +217,25 @@ async def update_profile(
 
 
 @router.get("/")
-def get_profile(request: Request, db: Session = Depends(get_db),user_data: dict = Depends(get_current_user)  ):
+def get_profile(request: Request, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)  ):
+    
     profile = db.query(ProfileTable).filter(ProfileTable.userId == user_data.id).first()
+    
     if not profile:
         return {"error": "Profile not found"}
-       
     
-
 
     return {
         "profile": {
             "userId": profile.userId,
             "name": profile.name,
-            "email": User.email,
-            "phone": User.phone,
+            "email": user_data.email,
+            "phone": user_data.phone,
             "gender": profile.gender,
             "dateOfBirth": profile.dateOfBirth,
             "designation": profile.designation,
             "companyName": profile.companyName,
             "profileImage": profile.profileImage,
-            "profile_image_public_id": profile.image_public_id,
             "createdOn": profile.createdOn,
             "updatedOn": profile.updatedOn
         }

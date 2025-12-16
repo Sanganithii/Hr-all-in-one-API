@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator,model_validator,StringConstraints
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Annotated  
+import re
 from enum import Enum
 
 
@@ -10,19 +11,24 @@ class GenderEnum(str, Enum):
     other = "other"
     prefer_not_to_say = "prefer_not_to_say"
 
-
+class ImageURL(BaseModel):
+    url: str
 
 
 class ProfileUpdate(BaseModel):
-
+    name: Annotated[
+        str,
+        StringConstraints(min_length=2, max_length=50, pattern=r"^[A-Za-z ]+$")
+    ] = Field(description="User's full name (letters and spaces only, 2-50 chars)")
     gender:  Optional[GenderEnum] = None
     dateOfBirth: Optional[date] = Field(None, description="Date of birth in YYYY-MM-DD format")
-    designation: str  # required field
+    designation: str  
     companyName: Optional[str] = None
-    profileImage: Optional[str] = None #= Field(default="default.png")  # default value
+    profileImageUrl: Optional[str] = None 
 
     
     @model_validator(mode="before")
+    @classmethod
     def validate_dob(cls, values):
         dob = values.get("dateOfBirth")
         if dob:
@@ -36,7 +42,7 @@ class ProfileUpdate(BaseModel):
             today = date.today()
             if dob > today:
                 raise ValueError("Date of birth cannot be in the future")
-            # Optional: check minimum age
+
             age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
             if age < 18:
                 raise ValueError("User must be at least 18 years old")
@@ -45,6 +51,3 @@ class ProfileUpdate(BaseModel):
     
     class Config:
         from_attributes = True
-    
-
-

@@ -5,7 +5,7 @@ from app.common.database_conn import get_db
 from app.schemas.user import UserCreate
 import logging   
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas.user import UserCreate, UserLogin
+from app.schemas.user import UserCreate, UserUpdate, UserLogin
 from app.utils.jwt_handler import create_access_token    
 from app.utils.security import get_current_user                 
 
@@ -32,7 +32,7 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
 
-    logger.info(f"New user registered: {new_user.name} ({new_user.email})")
+    logger.info(f"New user registered: {new_user.email}")
 
     return {"message": "User registered successfully", "user_id": new_user.id}
 
@@ -66,6 +66,61 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "token_type": "bearer",
         "user_id": user.id
     }
+
+
+
+@router.put("/users/update")
+def update_user(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    updated = False
+
+    
+    if data.email is not None:
+        if data.email != current_user.email:
+            exists = db.query(User).filter(User.email == data.email).first()
+            if exists:
+                raise HTTPException(400, "Email already exists")
+            current_user.email = data.email
+            updated = True
+
+    if data.phone is not None:
+        current_user.phone = data.phone
+        updated = True
+
+
+    if data.old_password is not None and data.new_password is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter new password"
+        )
+
+    if data.new_password is not None and data.old_password is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter old password is required"
+        )
+
+    if data.old_password is not None and data.new_password is not None:
+        if not current_user.verify_password(data.old_password):
+            raise HTTPException(
+                status_code=400,
+                detail="Old password is incorrect"
+            )
+
+        current_user.set_password(data.new_password)
+        updated = True
+
+    if not updated:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid fields for update"
+        )
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {"message": "User updated successfully"}
+
+
 
 
 @router.get("/protected")

@@ -7,16 +7,15 @@ from pydantic import BaseModel, Field, EmailStr, constr
 
 class UserCreate(BaseModel):
     
-    name: Annotated[
-        str,
-        StringConstraints(min_length=2, max_length=50, pattern=r"^[A-Za-z ]+$")
-    ] = Field(description="User's full name (letters and spaces only, 2-50 chars)")
-    #name = Annotated[str, StringConstraints(min_length=2, max_length=50, pattern=r"^[A-Za-z ]+$")]
     phone :Annotated[str, StringConstraints(pattern=r"^[6-9]\d{9}$")]
     email: Annotated[EmailStr,Field(..., description="Valid email address")]
     password : Annotated[str, StringConstraints(min_length=5)]
 
-
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[Annotated[str, StringConstraints(pattern=r"^[6-9]\d{9}$")]] = None
+    old_password: Optional[str] = None
+    new_password: Optional[Annotated[str, StringConstraints(min_length=5)]] = None
     
 
 class Token(BaseModel):

@@ -21,17 +21,10 @@ async def upload_profile_image(file):
         resource_type="image",
         overwrite=True
     )
-    return result["secure_url"]
+    return  {"uuid": result["public_id"],   "secure_url": result["secure_url"]}
 
-
-# # Helper to upload to Cloudinary
-# async def upload_to_cloudinary(file: UploadFile,user_id:int) -> str:
-#     file_content = await file.read()  # Read file bytes
-#     result = cloudinary.uploader.upload(
-#         file_content,
-#         folder="profileImages_hr",
-#         public_id=f"user_{user_id}",   # 🔑 fixed ID
-#         overwrite=True,     # optional folder
-#         resource_type="image"
-#     )
-#     return result.get("secure_url")  # URL to store in DB
+async def delete_profile_image(public_id: str):
+    cloudinary.uploader.destroy(
+        public_id,
+        resource_type="image"
+    )

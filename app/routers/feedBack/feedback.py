@@ -68,7 +68,7 @@ def create_feedback(data:FeedbackCreate,db: Session = Depends(get_db),current_us
 
 
 @router.get("/view-feedback")
-def get_top_positive_feedback(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def get_top_positive_feedback(db: Session = Depends(get_db)):
     
     rating_priority = [5, 4, 3,2,1]
 

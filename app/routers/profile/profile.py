@@ -158,15 +158,15 @@ async def update_profile(
         else :
             return {"error": "No profile image to remove."}        
     else :
-            profile_image_path = profile.profileImageUrl
-            image_public_id = profile.image_public_id
+            profile_image_path = profile.profileImage
+            image_public_id = profile.image_public_idgit
 
     profile.name = name or profile.name
     profile.gender = gender or profile.gender
     profile.dateOfBirth = dateOfBirth or profile.dateOfBirth
     profile.designation = designation or profile.designation
     profile.companyName = companyName or profile.companyName
-    profile.profileImageUrl = profile_image_path
+    profile.profileImage = profile_image_path
     profile.image_public_id = image_public_id
     db.add(profile)
     db.commit()
@@ -182,7 +182,6 @@ async def update_profile(
             "designation": profile.designation,
             "companyName": profile.companyName,
             "profileImage": profile.profileImage,
-            "profile_image_public_id": profile.image_public_id,
             "createdOn": profile.createdOn,
             "updatedOn": profile.updatedOn
         }

@@ -41,20 +41,17 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Accept username as email or phone
-    user = db.query(User).filter(
-        (User.email == form_data.username) | (User.phone == form_data.username)
-    ).first()
-    # if not form_data.email and not form_data.phone:
-    #     raise HTTPException(status_code=400, detail="Either email or phone must be provided.")
-    # if form_data.email:
-    #     user = db.query(User).filter(User.email == form_data.email).first()
-    # else:
-    #     user = db.query(User).filter(User.phone == form_data.phone).first()
-    
+    user = db.query(User).filter((User.email == form_data.username) | (User.phone == form_data.username)).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    if not user.isActive:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is inactive. Please contact support."
+        )
+    
     if not user.verify_password(form_data.password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 

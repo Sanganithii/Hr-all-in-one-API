@@ -189,33 +189,6 @@ async def update_profile(
     }
 
 
-# @router.get("/")
-# def get_profile(request: Request, db: Session = Depends(get_db),user_data: dict = Depends(get_current_user)  ):
-#     profile = db.query(ProfileTable).filter(ProfileTable.userId == user_data.id).first()
-   
-#     if not profile:
-#         return {"error": "Profile not found"}
-
-#     profile_image_url = profile.profileImage
-
-
-#     return {
-#         "profile": {
-#             "userId": profile.userId,
-#             "name": profile.name,
-#             "email": profile.email,
-#             "phone": profile.phone,
-#             "gender": profile.gender,
-#             "dateOfBirth": profile.dateOfBirth,
-#             "designation": profile.designation,
-#             "companyName": profile.companyName,
-#             "profileImage": profile_image_url,
-#             "createdOn": profile.createdOn,
-#             "updatedOn": profile.updatedOn
-#         }
-#     }
-
-
 @router.get("/")
 def get_profile(request: Request, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)  ):
     

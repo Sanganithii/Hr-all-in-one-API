@@ -84,7 +84,7 @@ def get_top_positive_feedback(db: Session = Depends(get_db)):
                 UserFeedback.feedback != ""
             )
             .order_by(UserFeedback.createdOn.desc())
-            .limit(5)
+            .limit(3)
             .all()
         )
 
@@ -104,6 +104,7 @@ def get_top_positive_feedback(db: Session = Depends(get_db)):
         "data": [
             {
                 "id": f.id,
+                "image": f.image,
                 "userName": f.userName,
                 "designation": f.designation,
                 "companyName": f.companyName,

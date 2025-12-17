@@ -44,11 +44,13 @@ async def createProfile(name: str = Form(...),
 ):  
     if gender == "":
        gender = None
+
     if dateOfBirth == "":
        dateOfBirth = None
     
     if companyName == "":
        companyName = None
+
     if dateOfBirth is not None:
        try:
            dateOfBirth_valid = validate_dob(dateOfBirth)
@@ -105,70 +107,61 @@ async def createProfile(name: str = Form(...),
 @router.put("/update-profile/")
 async def update_profile(
     name: Optional[str] = Form(None),
-    gender: Optional[GenderEnum]=Form(default=None, example=None),
-    dateOfBirth: Optional[date] = Form(default=None, example=None),
-    designation: Optional[str] = Form(default=None, example=None),
-    companyName: Optional[str] = Form(default=None, example=None),
-    file: Optional[UploadFile] = File(default=None, example=None),  
-    remove :Optional[bool] =False, 
+    gender: Optional[GenderEnum] = Form(None),
+    dateOfBirth: Optional[date] = Form(None),
+    designation: Optional[str] = Form(None),
+    companyName: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    remove: Optional[bool] = False,
     db: Session = Depends(get_db),
     user_data: User = Depends(get_current_user)
 ):
-    if gender == "":
-       gender = None
-    if dateOfBirth == "":
-       dateOfBirth = None
-    if designation == "":
-       designation = None   
-    if companyName == "":
-       companyName = None
+    profile = db.query(ProfileTable).filter(
+        ProfileTable.userId == user_data.id
+    ).first()
 
-
-    if dateOfBirth is not None:
-       try:
-           dateOfBirth_valid = validate_dob(dateOfBirth)
-       except ValueError as e:
-           raise HTTPException(status_code=422, detail=str("invalid dateOfBirth: " + str(e)))
-    profile = db.query(ProfileTable).filter(ProfileTable.userId == user_data.id).first()
     if not profile:
-        return {"error": "Profile not found"}
+        raise HTTPException(status_code=404, detail="Profile not found")
     
-    
-      
     
     if file:
         profile_image_data = await upload_profile_image(file)
-        image_public_id = profile_image_data["uuid"]
-        profile_image_path = profile_image_data["secure_url"]
-    
+        profile.profileImage = profile_image_data["secure_url"]
+        profile.image_public_id = profile_image_data["uuid"]
+
     elif remove:
         if profile.image_public_id:
             delete_profile_image(profile.image_public_id)
 
-            g = gender 
-            if g.lower() == "male":
-               profile_image_path = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794267/male_fu4acn.jpg"
-               image_public_id = None
-            elif g.lower() == "female":
-               profile_image_path = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794159/female_rwr0am.jpg"
-               image_public_id = None
-            else:
-               profile_image_path = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794159/default_wjormw.png"
-               image_public_id = None
-        else :
-            return {"error": "No profile image to remove."}        
-    else :
-            profile_image_path = profile.profileImage
-            image_public_id = profile.image_public_idgit
+        g = (gender or profile.gender or "other").lower()
+        if g == "male":
+            profile.profileImage = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794267/male_fu4acn.jpg"
+        elif g == "female":
+            profile.profileImage = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794159/female_rwr0am.jpg"
+        else:
+            profile.profileImage = "https://res.cloudinary.com/ds7itk6lz/image/upload/v1765794159/default_wjormw.png"
 
-    profile.name = name or profile.name
-    profile.gender = gender or profile.gender
-    profile.dateOfBirth = dateOfBirth or profile.dateOfBirth
-    profile.designation = designation or profile.designation
-    profile.companyName = companyName or profile.companyName
-    profile.profileImage = profile_image_path
-    profile.image_public_id = image_public_id
-    db.add(profile)
+        profile.image_public_id = None
+
+    
+    if name not in (None, "", "string"):
+        profile.name = name
+
+    if gender is not None:
+        profile.gender = gender
+
+    if dateOfBirth is not None:
+        try:
+            profile.dateOfBirth = validate_dob(dateOfBirth)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+    
+    if designation not in (None, "", "string"):
+        profile.designation = designation
+
+    if companyName not in (None, "", "string"):
+        profile.companyName = companyName
+
     db.commit()
     db.refresh(profile)
 
@@ -178,12 +171,12 @@ async def update_profile(
             "userId": profile.userId,
             "name": profile.name,
             "gender": profile.gender,
-            "dateOfBirth": profile.dateOfBirth ,
+            "dateOfBirth": profile.dateOfBirth,
             "designation": profile.designation,
             "companyName": profile.companyName,
             "profileImage": profile.profileImage,
             "createdOn": profile.createdOn,
-            "updatedOn": profile.updatedOn
+            "updatedOn": profile.updatedOn,
         }
     }
 

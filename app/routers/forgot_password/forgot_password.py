@@ -36,7 +36,8 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
 
     
     return {
-        "message": "If the account exists, an OTP has been sent to the registered email"
+        "message": " OTP has been sent to the registered email",
+        "note": "If you don’t see the email, please check your Spam or Junk folder."
     }
 
 

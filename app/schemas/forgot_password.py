@@ -6,7 +6,18 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
-class VerifyOtpResetPassword(BaseModel):
+
+class VerifyOtpRequest(BaseModel):
     email: EmailStr
-    otp: Annotated[str, StringConstraints(min_length=6, max_length=6)]
-    new_password: Annotated[str, StringConstraints(min_length=5)]
+    otp: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+
+
+# class VerifyOtpResetPassword(BaseModel):
+#     email: EmailStr
+#     otp: Annotated[str, StringConstraints(min_length=6, max_length=6)]
+#     new_password: Annotated[str, StringConstraints(min_length=5)]

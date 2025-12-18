@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.common.database_conn import get_db
-from app.schemas.forgot_password import ForgotPasswordRequest, VerifyOtpResetPassword
+from app.schemas.forgot_password import ForgotPasswordRequest, VerifyOtpRequest, ResetPasswordRequest
 from app.common.model import User, PasswordReset
 from app.utils.sendotp_helper import generate_otp, pwd_context, send_otp_email
 
@@ -41,20 +41,25 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/user/verify-otp-reset-password")
-def verify_otp_and_reset_password(data: VerifyOtpResetPassword, db: Session = Depends(get_db)):
-    
+@router.post("/user/verify-otp")
+def verify_otp(data: VerifyOtpRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP or email"
+            detail="Invalid email or OTP"
         )
 
-    
     reset = (
-        db.query(PasswordReset).filter(PasswordReset.user_id == user.id, PasswordReset.is_used == False)
-        .order_by(PasswordReset.created_at.desc()).first())
+        db.query(PasswordReset)
+        .filter(
+            PasswordReset.user_id == user.id,
+            PasswordReset.is_used == False,
+            PasswordReset.is_verified == False
+        )
+        .order_by(PasswordReset.created_at.desc())
+        .first()
+    )
 
     if not reset:
         raise HTTPException(
@@ -62,26 +67,100 @@ def verify_otp_and_reset_password(data: VerifyOtpResetPassword, db: Session = De
             detail="Invalid or expired OTP"
         )
 
-    
     if reset.expires_at < datetime.utcnow():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="OTP has expired"
         )
 
-    
     if not pwd_context.verify(data.otp, reset.otp_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid OTP"
         )
 
-    
+    reset.is_verified = True
+    db.commit()
+
+    return {"message": "OTP verified successfully"}
+
+
+@router.post("/user/reset-password")
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email"
+        )
+
+    reset = (
+        db.query(PasswordReset)
+        .filter(
+            PasswordReset.user_id == user.id,
+            PasswordReset.is_verified == True,
+            PasswordReset.is_used == False
+        )
+        .order_by(PasswordReset.created_at.desc())
+        .first()
+    )
+
+    if not reset:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification required"
+        )
+
     user.set_password(data.new_password)
 
-    
     reset.is_used = True
-
     db.commit()
 
     return {"message": "Password reset successful"}
+
+
+
+# @router.post("/user/verify-otp-reset-password")
+# def verify_otp_and_reset_password(data: VerifyOtpResetPassword, db: Session = Depends(get_db)):
+    
+#     user = db.query(User).filter(User.email == data.email).first()
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Invalid OTP or email"
+#         )
+
+    
+#     reset = (
+#         db.query(PasswordReset).filter(PasswordReset.user_id == user.id, PasswordReset.is_used == False)
+#         .order_by(PasswordReset.created_at.desc()).first())
+
+#     if not reset:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Invalid or expired OTP"
+#         )
+
+    
+#     if reset.expires_at < datetime.utcnow():
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="OTP has expired"
+#         )
+
+    
+#     if not pwd_context.verify(data.otp, reset.otp_hash):
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Invalid OTP"
+#         )
+
+    
+#     user.set_password(data.new_password)
+
+    
+#     reset.is_used = True
+
+#     db.commit()
+
+#     return {"message": "Password reset successful"}
